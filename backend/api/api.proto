@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package api;
+
+message ResistanceReading {
+  float resistance = 1;
+  string device = 2;
+}
+
+message ResistanceResponse {
+  enum Status {
+    FAILED = 0;
+    OK = 1;
+  }
+  Status status = 1;
+}
+
+service Resistance {
+  rpc ReadResistance(ResistanceReading) returns (ResistanceResponse);
+}

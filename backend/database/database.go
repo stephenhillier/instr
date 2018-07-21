@@ -31,7 +31,7 @@ Thermistor reading database reads/writes
 */
 
 // StoreReading adds a reading into the database
-func StoreReading(resistance float32, device string) error {
+func StoreReading(resistance float64, device string) error {
 	reading := `INSERT INTO reading (device, resistance) VALUES ($1, $2)`
 
 	_, err := DB.Exec(reading, device, resistance)

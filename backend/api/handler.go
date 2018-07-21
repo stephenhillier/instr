@@ -21,6 +21,6 @@ func (s *Server) ReadResistance(ctx context.Context, in *ResistanceReading) (*Re
 		log.Println("Database write failed")
 	}
 
-	log.Printf("[Thermistor] [%s] %v Ohms", in.Device, in.Resistance)
+	log.Printf("[Thermistor] [%s] %v", in.Device, in.Resistance)
 	return &ResistanceResponse{Status: 1}, nil
 }

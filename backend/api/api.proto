@@ -3,7 +3,7 @@ syntax = "proto3";
 package api;
 
 message ResistanceReading {
-  float resistance = 1;
+  double resistance = 1;
   string device = 2;
 }
 

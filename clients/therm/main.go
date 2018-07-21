@@ -1,22 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/stephenhillier/instr/backend/api"
-	"golang.org/x/net/context"
+	"gobot.io/x/gobot"
+	"gobot.io/x/gobot/drivers/i2c"
+	"gobot.io/x/gobot/platforms/raspi"
 	"google.golang.org/grpc"
 )
 
-// func client() {
+func recordResistance() {
 
-// }
+}
 
 func main() {
-	devID := "TH18-1"      // device ID
-	var resistance float32 // the measured resistance of the thermistor
+	devID := "RaspberryPi-1" // device ID
 	// var diff float64
 
 	// gRPC connection parameters
@@ -26,19 +28,14 @@ func main() {
 	port := 7777
 
 	// set up the Raspberry Pi/Analog to digital converter (ADS1015)
-	// board := raspi.NewAdaptor()
-	// ads1015 := i2c.NewADS1015Driver(board)
-	// ads1015.DefaultGain, _ = ads1015.BestGainForVoltage(5.0)
-
-	// robot := gobot.NewRobot("thermBot",
-	// 	[]gobot.Connection{board},
-	// 	[]gobot.Device{ads1015, sensor}
-	// )
+	board := raspi.NewAdaptor()
+	ads1015 := i2c.NewADS1015Driver(board)
+	ads1015.DefaultGain, _ = ads1015.BestGainForVoltage(3.3)
 
 	// Set up a gRPC connection
 	// Wait until a connection is available
 	log.Printf("Trying to connect to %s...", host)
-connection:
+	// connection:
 	for {
 		conn, err = grpc.Dial(fmt.Sprintf("%s:%v", host, port), grpc.WithInsecure())
 		if err == nil {
@@ -54,17 +51,30 @@ connection:
 
 	c := api.NewResistanceClient(conn)
 
-	var i float32
-	for i = 1.0; i < 20000.0; i = i + 1.0 {
-		response, err := c.ReadResistance(context.Background(), &api.ResistanceReading{Resistance: resistance + i, Device: devID})
-		if err != nil {
-			log.Printf("Error making ReadResistance request: %s", err)
-			conn.Close()
-			goto connection
-		}
+	work := func() {
+		gobot.Every(500*time.Millisecond, func() {
 
-		log.Printf("Response from server: %s", response.Status)
+			r, e := ads1015.ReadWithDefaults(1)
+			if e != nil {
+				log.Printf("Error: %v", err)
+			}
+			response, err := c.ReadResistance(context.Background(), &api.ResistanceReading{Resistance: r, Device: devID})
+			if err != nil {
+				log.Printf("Error sending data to server")
+			}
+			log.Printf("Response from server: %s", response.Status)
+		})
 	}
 
-	// robot.Start()
+	robot := gobot.NewRobot("thermBot",
+		[]gobot.Connection{board},
+		[]gobot.Device{ads1015},
+		work,
+	)
+
+	err = robot.Start()
+	if err != nil {
+		log.Println(err)
+	}
+
 }

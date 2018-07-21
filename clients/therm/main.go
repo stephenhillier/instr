@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"time"
@@ -13,10 +14,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-func recordResistance() {
-
-}
-
 func main() {
 	devID := "RaspberryPi-1" // device ID
 	// var diff float64
@@ -24,7 +21,10 @@ func main() {
 	// gRPC connection parameters
 	var conn *grpc.ClientConn
 	var err error
-	host := "stevepc"
+
+	host := flag.String("host", "localhost", "hostname to connect to")
+	flag.Parse()
+
 	port := 7777
 
 	// set up the Raspberry Pi/Analog to digital converter (ADS1015)
@@ -34,10 +34,10 @@ func main() {
 
 	// Set up a gRPC connection
 	// Wait until a connection is available
-	log.Printf("Trying to connect to %s...", host)
+	log.Printf("Trying to connect to %s...", *host)
 	// connection:
 	for {
-		conn, err = grpc.Dial(fmt.Sprintf("%s:%v", host, port), grpc.WithInsecure())
+		conn, err = grpc.Dial(fmt.Sprintf("%s:%v", *host, port), grpc.WithInsecure())
 		if err == nil {
 			log.Printf("Connected on port %v.", port)
 			break
@@ -51,13 +51,11 @@ func main() {
 
 	c := api.NewResistanceClient(conn)
 
+	// work is a function that collects readings and sends them to a server to be stored
 	work := func() {
 		gobot.Every(500*time.Millisecond, func() {
 
-			r, e := ads1015.ReadWithDefaults(1)
-			if e != nil {
-				log.Printf("Error: %v", err)
-			}
+			r, _ := ads1015.ReadWithDefaults(1)
 			response, err := c.ReadResistance(context.Background(), &api.ResistanceReading{Resistance: r, Device: devID})
 			if err != nil {
 				log.Printf("Error sending data to server")

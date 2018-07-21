@@ -14,6 +14,7 @@ type Server struct {
 }
 
 // ReadResistance reads in a resistance (ohms) from an instrument and stores it
+// TODO: voltage is not currently converted to resistance
 func (s *Server) ReadResistance(ctx context.Context, in *ResistanceReading) (*ResistanceResponse, error) {
 
 	err := database.StoreReading(in.Resistance, in.Device)
